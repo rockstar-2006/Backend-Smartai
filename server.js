@@ -52,6 +52,30 @@ app.use(express.json({ limit: '5mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
+// --- Request logging middleware ---
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.originalUrl}`);
+  next();
+});
+
+// --- Root route ---
+app.get('/', (req, res) => {
+  res.json({ 
+    message: 'SmartAI Backend API is running!', 
+    version: '1.0',
+    endpoints: [
+      'GET /api/health',
+      'GET /api/debug/test-nodemailer',
+      'POST /api/auth/register',
+      'POST /api/auth/login',
+      'GET /api/quiz',
+      'GET /api/folders',
+      'GET /api/students',
+    ],
+    timestamp: new Date().toISOString()
+  });
+});
+
 // --- MongoDB connect (env: MONGODB_URI) ---
 // Cache connection in serverless / repeated starts
 const MONGO_URI = process.env.MONGODB_URI || process.env.MONGO_URI || 'mongodb://localhost:27017/quizapp';
@@ -59,7 +83,10 @@ async function connectDB() {
   if (mongoose.connection.readyState === 1) return;
   if (global._mongoPromise) await global._mongoPromise;
   else {
-    global._mongoPromise = mongoose.connect(MONGO_URI)
+    global._mongoPromise = mongoose.connect(MONGO_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    })
       .then(async () => {
         console.log('MongoDB connected successfully');
         if (typeof createIndexes === 'function') {
