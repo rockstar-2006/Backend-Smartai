@@ -67,13 +67,12 @@ app.get('/', (req, res) => {
     message: 'SmartAI Backend API is running!', 
     version: '1.0',
     endpoints: [
-      'GET /api/health',
-      'GET /api/debug/test-nodemailer',
-      'POST /api/auth/register',
-      'POST /api/auth/login',
+      'GET /api/auth',
+      'GET /api/bookmark',
       'GET /api/quiz',
       'GET /api/folders',
       'GET /api/students',
+      'GET /api/students-quiz',
     ],
     timestamp: new Date().toISOString()
   });
