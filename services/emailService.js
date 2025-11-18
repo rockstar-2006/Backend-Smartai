@@ -1,10 +1,10 @@
-<<<<<<< HEAD
-// backend/services/emailService.js
-=======
-// services/emailService.js
->>>>>>> 8ca4e2e5c968921e3f5aff4a4124db26d5062779
-// Hybrid email service: Use SendGrid in production (SENDGRID_API_KEY).
-// Fall back to Nodemailer (Gmail) for local development when SENDGRID isn't configured.
+// <<<<<<< HEAD
+// // backend/services/emailService.js
+// =======
+// // services/emailService.js
+// >>>>>>> 8ca4e2e5c968921e3f5aff4a4124db26d5062779
+// // Hybrid email service: Use SendGrid in production (SENDGRID_API_KEY).
+// // Fall back to Nodemailer (Gmail) for local development when SENDGRID isn't configured.
 
 const isSendGrid = !!process.env.SENDGRID_API_KEY;
 
