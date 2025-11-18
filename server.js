@@ -21,11 +21,14 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 // allowed origins: include your local dev and production frontend (Vercel) URLs
+// Update your allowedOrigins array:
 const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:8080',
   'http://127.0.0.1:5173',
   'http://127.0.0.1:8080',
+  'https://frontend-smartai-hydx.vercel.app', // ← ADD THIS
+  'https://smartai-ten.vercel.app', // ← AND THIS (your other frontend)
   process.env.CLIENT_URL,
   process.env.VERCEL_URL
 ].filter(Boolean);
