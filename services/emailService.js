@@ -1,10 +1,6 @@
-// <<<<<<< HEAD
-// // backend/services/emailService.js
-// =======
-// // services/emailService.js
-// >>>>>>> 8ca4e2e5c968921e3f5aff4a4124db26d5062779
-// // Hybrid email service: Use SendGrid in production (SENDGRID_API_KEY).
-// // Fall back to Nodemailer (Gmail) for local development when SENDGRID isn't configured.
+﻿// services/emailService.js
+// Hybrid email service: Use SendGrid in production (SENDGRID_API_KEY).
+// Fall back to Nodemailer (Gmail) for local development when SENDGRID isn't configured.
 
 const isSendGrid = !!process.env.SENDGRID_API_KEY;
 
@@ -46,7 +42,7 @@ class EmailService {
       <body style="font-family: Arial, sans-serif; color:#333; line-height:1.6;">
         <div style="max-width:600px;margin:0 auto;padding:20px;">
           <div style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;padding:30px;border-radius:10px 10px 0 0;text-align:center;">
-            <h1 style="margin:0">📝 Quiz Invitation</h1>
+            <h1 style="margin:0"> Quiz Invitation</h1>
           </div>
           <div style="background:#f9f9f9;padding:30px;border-radius:0 0 10px 10px;">
             <h2>Hello!</h2>

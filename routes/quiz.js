@@ -297,4 +297,3 @@ router.get('/:id/results/download', protect, async (req, res) => {
 });
 
 module.exports = router;
-
