@@ -21,6 +21,7 @@
     "mongoose": "^8.0.3",
     "morgan": "^1.10.1",
     "nodemailer": "^7.0.10",
+    "serverless-http": "^4.0.0",
     "validator": "^13.11.0",
     "xlsx": "^0.18.5"
   },
