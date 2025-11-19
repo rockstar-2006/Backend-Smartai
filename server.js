@@ -20,41 +20,56 @@ const app = express();
 // --- Config ---
 const PORT = process.env.PORT || 3001;
 
-/*
-  Allowed origins:
-  - Add your frontend production origin(s) here (exact origin including https:// and hostname)
-  - Example: https://frontend-smartai-hydx.vercel.app
-*/
+// If behind a proxy (Vercel), enable trust proxy so req.protocol and secure cookies work
+app.set('trust proxy', 1);
+
+// allowed origins: include your local dev and production frontend (Vercel) URLs
+// prefer explicit env var CLIENT_URL or FRONTEND_URL, but allow localhost during dev
 const allowedOrigins = [
+  process.env.CLIENT_URL,
+  process.env.FRONTEND_URL,
+  'https://frontend-smartai-hydx.vercel.app', // explicit frontend (production) — keep as convenience
   'http://localhost:5173',
   'http://localhost:8080',
   'http://127.0.0.1:5173',
   'http://127.0.0.1:8080',
-  process.env.CLIENT_URL,   // e.g. https://frontend-smartai-hydx.vercel.app
-  process.env.FRONTEND_URL, // optional alias
-  process.env.VERCEL_URL    // optional
 ].filter(Boolean);
 
-// CORS options: echo origin only when allowed, support credentials and preflight
+// Use cors package (echo origin when allowed)
 const corsOptions = {
-  origin: function (origin, callback) {
+  origin: function(origin, callback) {
     // allow non-browser clients (curl/postman) where origin is undefined
     if (!origin) return callback(null, true);
     if (allowedOrigins.includes(origin)) return callback(null, true);
     console.warn('Blocked CORS request from origin:', origin);
     return callback(new Error('Not allowed by CORS'));
   },
-  credentials: true, // allow cookies to be sent/received
+  credentials: true,
   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
-  preflightContinue: false,
-  optionsSuccessStatus: 204
+  allowedHeaders: 'Content-Type, Authorization, X-Requested-With'
 };
 
-// Apply CORS early
+// Apply CORS middleware
 app.use(cors(corsOptions));
-// Ensure preflight OPTIONS are answered
+
+// Be explicit about preflight handling
 app.options('*', cors(corsOptions));
+
+// Safety fallback: add headers if origin matches allowedOrigins (helps if some middleware short-circuits)
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (origin && allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+    res.setHeader('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS');
+  }
+  // for preflight, return 204 quickly
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(204);
+  }
+  next();
+});
 
 // parse JSON and cookies
 app.use(express.json({ limit: '5mb' }));
@@ -63,7 +78,7 @@ app.use(cookieParser());
 
 // --- MongoDB connect (env: MONGODB_URI) ---
 // Cache connection in serverless / repeated starts
-const MONGO_URI = process.env.MONGODB_URI || process.env.MONGO_URI || 'mongodb+srv://bhushanpoojary2006_db_user:odOBiQJWa3gWljAW@cluster0.bpuvhi2.mongodb.net/';
+const MONGO_URI = process.env.MONGODB_URI || process.env.MONGO_URI || 'mongodb://localhost:27017/quizapp';
 async function connectDB() {
   if (mongoose.connection.readyState === 1) return;
   if (global._mongoPromise) await global._mongoPromise;
