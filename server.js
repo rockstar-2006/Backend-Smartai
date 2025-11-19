@@ -45,7 +45,7 @@ const rawAllowlist = [
   process.env.VERCEL_URL       // often a bare host like frontend-xyz.vercel.app
 ];
 
-// Optionally allow all vercel preview subdomains (UNSECURE: enable only if acceptable).
+// Optionally allow all vercel preview subdomains (enable only if acceptable).
 // Set ALLOW_VERCEL_PREVIEWS=true in env to permit https://*.vercel.app origins.
 const allowVercelPreviews = String(process.env.ALLOW_VERCEL_PREVIEWS || '').toLowerCase() === 'true';
 
@@ -61,7 +61,7 @@ console.log('ALLOW_VERCEL_PREVIEWS:', allowVercelPreviews);
 
 // --- Small incoming-origin logger (placed BEFORE CORS so preflight origin is visible) ---
 app.use((req, res, next) => {
-  // This helps debug what the browser actually sends as the Origin header.
+  // Helps debug what the browser actually sends as the Origin header.
   console.log(new Date().toISOString(), '- Incoming Origin header:', req.headers.origin);
   next();
 });
@@ -76,7 +76,7 @@ const corsOptions = {
     if (allowedOrigins.includes(origin)) return callback(null, true);
 
     // optional: allow vercel preview subdomains like https://something.vercel.app
-    if (allowVercelPreviews && /^https:\/\/.+\.vercel\.app$/i.test(origin)) {
+    if (allowVercelPreviews && /^https:\/\/[A-Za-z0-9-]+\.vercel\.app$/i.test(origin)) {
       console.log('Allowing vercel preview origin:', origin);
       return callback(null, true);
     }
