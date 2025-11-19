@@ -42,7 +42,7 @@ class EmailService {
       <body style="font-family: Arial, sans-serif; color:#333; line-height:1.6;">
         <div style="max-width:600px;margin:0 auto;padding:20px;">
           <div style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;padding:30px;border-radius:10px 10px 0 0;text-align:center;">
-            <h1 style="margin:0">📝 Quiz Invitation</h1>
+            <h1 style="margin:0"> Quiz Invitation</h1>
           </div>
           <div style="background:#f9f9f9;padding:30px;border-radius:0 0 10px 10px;">
             <h2>Hello!</h2>
