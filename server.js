@@ -1,4 +1,3 @@
-// server.js
 require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
@@ -21,14 +20,11 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 // allowed origins: include your local dev and production frontend (Vercel) URLs
-// Update your allowedOrigins array:
 const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:8080',
   'http://127.0.0.1:5173',
   'http://127.0.0.1:8080',
-  'https://frontend-smartai-hydx.vercel.app', // ← ADD THIS
-  'https://smartai-ten.vercel.app', // ← AND THIS (your other frontend)
   process.env.CLIENT_URL,
   process.env.VERCEL_URL
 ].filter(Boolean);
@@ -55,29 +51,6 @@ app.use(express.json({ limit: '5mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-// --- Request logging middleware ---
-app.use((req, res, next) => {
-  console.log(`${new Date().toISOString()} - ${req.method} ${req.originalUrl}`);
-  next();
-});
-
-// --- Root route ---
-app.get('/', (req, res) => {
-  res.json({ 
-    message: 'SmartAI Backend API is running!', 
-    version: '1.0',
-    endpoints: [
-      'GET /api/auth',
-      'GET /api/bookmark',
-      'GET /api/quiz',
-      'GET /api/folders',
-      'GET /api/students',
-      'GET /api/students-quiz',
-    ],
-    timestamp: new Date().toISOString()
-  });
-});
-
 // --- MongoDB connect (env: MONGODB_URI) ---
 // Cache connection in serverless / repeated starts
 const MONGO_URI = process.env.MONGODB_URI || process.env.MONGO_URI || 'mongodb://localhost:27017/quizapp';
@@ -85,10 +58,7 @@ async function connectDB() {
   if (mongoose.connection.readyState === 1) return;
   if (global._mongoPromise) await global._mongoPromise;
   else {
-    global._mongoPromise = mongoose.connect(MONGO_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    })
+    global._mongoPromise = mongoose.connect(MONGO_URI)
       .then(async () => {
         console.log('MongoDB connected successfully');
         if (typeof createIndexes === 'function') {
