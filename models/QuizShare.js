@@ -1,3 +1,4 @@
+// backend/models/QuizShare.js
 const mongoose = require('mongoose');
 
 const quizShareSchema = new mongoose.Schema({

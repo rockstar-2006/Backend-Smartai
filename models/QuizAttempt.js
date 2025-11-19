@@ -1,3 +1,4 @@
+// backend/models/QuizAttempt.js
 const mongoose = require('mongoose');
 
 const quizAttemptSchema = new mongoose.Schema({
@@ -34,7 +35,8 @@ const quizAttemptSchema = new mongoose.Schema({
       awarded: Number,
       max: Number,
       expectedAnswer: String,
-      givenAnswer: String
+      givenAnswer: String,
+      explanation: String
     }
   ],
 
@@ -50,6 +52,8 @@ const quizAttemptSchema = new mongoose.Schema({
 
   // token used in share link (unique per share)
   uniqueToken: { type: String, required: true, unique: true }
+}, {
+  timestamps: true
 });
 
 // Useful indexes
