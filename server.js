@@ -199,11 +199,16 @@ app.get('/api/debug/test-nodemailer', async (req, res) => {
 app.use(notFound);
 app.use(errorHandler);
 
-// start
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-  console.log(`Allowed client origins (explicit list):`, allowedOrigins);
-  if (allowVercelPreviews) {
-    console.log('Vercel preview wildcard is ENABLED (https://*.vercel.app allowed).');
-  }
-});
+// Export app for serverless adapters or tests
+module.exports = app;
+
+// Start server only when run directly (so this file can also be required by a serverless wrapper)
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+    console.log(`Allowed client origins (explicit list):`, allowedOrigins);
+    if (allowVercelPreviews) {
+      console.log('Vercel preview wildcard is ENABLED (https://*.vercel.app allowed).');
+    }
+  });
+}
