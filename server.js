@@ -20,79 +20,34 @@ const app = express();
 // --- Config ---
 const PORT = process.env.PORT || 3001;
 
-/**
- * Normalize allowlist entries so they match the browser Origin header
- * - If entry already includes http(s)://, keep it
- * - Otherwise assume https://host
- * - Trim trailing slashes
- */
-function normalizeOriginEntry(entry) {
-  if (!entry) return null;
-  entry = String(entry).trim().replace(/\/+$/, '');
-  if (/^https?:\/\//i.test(entry)) return entry;
-  return `https://${entry}`;
-}
-
-// Raw allowlist (edit as needed). Keep env entries; they'll be normalized.
-const rawAllowlist = [
+// allowed origins: include your local dev and production frontend (Vercel) URLs
+const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:8080',
   'http://127.0.0.1:5173',
   'http://127.0.0.1:8080',
-  'https://frontend-smartai-hydx.vercel.app',
-  'https://smartai-ten.vercel.app',
-  process.env.CLIENT_URL,      // e.g. https://your-frontend.example.com or bare host
-  process.env.VERCEL_URL       // often a bare host like frontend-xyz.vercel.app
-];
+  'https://frontend-smartai-hydx.vercel.app', // ← ADD THIS
+  'https://smartai-ten.vercel.app', // ← AND THIS (your other frontend)
+  process.env.CLIENT_URL,
+  process.env.VERCEL_URL
+].filter(Boolean);
 
-// Optionally allow all vercel preview subdomains (enable only if acceptable).
-// Set ALLOW_VERCEL_PREVIEWS=true in env to permit https://*.vercel.app origins.
-const allowVercelPreviews = String(process.env.ALLOW_VERCEL_PREVIEWS || '').toLowerCase() === 'true';
-
-const allowedOrigins = Array.from(new Set(
-  rawAllowlist
-    .map(normalizeOriginEntry)
-    .filter(Boolean)
-));
-
-// For visibility in logs
-console.log('Initial normalized allowed origins:', allowedOrigins);
-console.log('ALLOW_VERCEL_PREVIEWS:', allowVercelPreviews);
-
-// --- Small incoming-origin logger (placed BEFORE CORS so preflight origin is visible) ---
-app.use((req, res, next) => {
-  // Helps debug what the browser actually sends as the Origin header.
-  console.log(new Date().toISOString(), '- Incoming Origin header:', req.headers.origin);
-  next();
-});
-
-// Use cors package with a dynamic origin function
+// Use cors package (echo origin when allowed)
 const corsOptions = {
   origin: function (origin, callback) {
-    // Allow non-browser clients (curl, server-to-server) where origin is undefined
+    // allow non-browser clients (curl/postman) where origin is undefined
     if (!origin) return callback(null, true);
-
-    // exact match allowed
     if (allowedOrigins.includes(origin)) return callback(null, true);
-
-    // optional: allow vercel preview subdomains like https://something.vercel.app
-    if (allowVercelPreviews && /^https:\/\/[A-Za-z0-9-]+\.vercel\.app$/i.test(origin)) {
-      console.log('Allowing vercel preview origin:', origin);
-      return callback(null, true);
-    }
-
-    // blocked
     console.warn('Blocked CORS request from origin:', origin);
     return callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
-  methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+  allowedHeaders: 'Content-Type, Authorization, X-Requested-With'
 };
 
-// Apply CORS before body parsers and routes so preflight is handled
 app.use(cors(corsOptions));
-app.options('*', cors(corsOptions)); // enable preflight across the board
+app.options('*', cors(corsOptions));
 
 // parse JSON and cookies
 app.use(express.json({ limit: '5mb' }));
@@ -107,16 +62,17 @@ app.use((req, res, next) => {
 
 // --- Root route ---
 app.get('/', (req, res) => {
-  res.json({
-    message: 'SmartAI Backend API is running!',
+  res.json({ 
+    message: 'SmartAI Backend API is running!', 
     version: '1.0',
     endpoints: [
-      'GET /api/auth',
-      'GET /api/bookmark',
+      'GET /api/health',
+      'GET /api/debug/test-nodemailer',
+      'POST /api/auth/register',
+      'POST /api/auth/login',
       'GET /api/quiz',
       'GET /api/folders',
       'GET /api/students',
-      'GET /api/students-quiz',
     ],
     timestamp: new Date().toISOString()
   });
@@ -199,16 +155,8 @@ app.get('/api/debug/test-nodemailer', async (req, res) => {
 app.use(notFound);
 app.use(errorHandler);
 
-// Export app for serverless adapters or tests
-module.exports = app;
-
-// Start server only when run directly (so this file can also be required by a serverless wrapper)
-if (require.main === module) {
-  app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-    console.log(`Allowed client origins (explicit list):`, allowedOrigins);
-    if (allowVercelPreviews) {
-      console.log('Vercel preview wildcard is ENABLED (https://*.vercel.app allowed).');
-    }
-  });
-}
+// start
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+  console.log(`Allowed client origins:`, allowedOrigins);
+});
