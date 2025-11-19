@@ -20,35 +20,79 @@ const app = express();
 // --- Config ---
 const PORT = process.env.PORT || 3001;
 
-// allowed origins: include your local dev and production frontend (Vercel) URLs
-// Update your allowedOrigins array:
-const allowedOrigins = [
+/**
+ * Normalize allowlist entries so they match the browser Origin header
+ * - If entry already includes http(s)://, keep it
+ * - Otherwise assume https://host
+ * - Trim trailing slashes
+ */
+function normalizeOriginEntry(entry) {
+  if (!entry) return null;
+  entry = String(entry).trim().replace(/\/+$/, '');
+  if (/^https?:\/\//i.test(entry)) return entry;
+  return `https://${entry}`;
+}
+
+// Raw allowlist (edit as needed). Keep env entries; they'll be normalized.
+const rawAllowlist = [
   'http://localhost:5173',
   'http://localhost:8080',
   'http://127.0.0.1:5173',
   'http://127.0.0.1:8080',
-  'https://frontend-smartai-hydx.vercel.app', // ← ADD THIS
-  'https://smartai-ten.vercel.app', // ← AND THIS (your other frontend)
-  process.env.CLIENT_URL,
-  process.env.VERCEL_URL
-].filter(Boolean);
+  'https://frontend-smartai-hydx.vercel.app',
+  'https://smartai-ten.vercel.app',
+  process.env.CLIENT_URL,      // e.g. https://your-frontend.example.com or bare host
+  process.env.VERCEL_URL       // often a bare host like frontend-xyz.vercel.app
+];
 
-// Use cors package (echo origin when allowed)
+// Optionally allow all vercel preview subdomains (UNSECURE: enable only if acceptable).
+// Set ALLOW_VERCEL_PREVIEWS=true in env to permit https://*.vercel.app origins.
+const allowVercelPreviews = String(process.env.ALLOW_VERCEL_PREVIEWS || '').toLowerCase() === 'true';
+
+const allowedOrigins = Array.from(new Set(
+  rawAllowlist
+    .map(normalizeOriginEntry)
+    .filter(Boolean)
+));
+
+// For visibility in logs
+console.log('Initial normalized allowed origins:', allowedOrigins);
+console.log('ALLOW_VERCEL_PREVIEWS:', allowVercelPreviews);
+
+// --- Small incoming-origin logger (placed BEFORE CORS so preflight origin is visible) ---
+app.use((req, res, next) => {
+  // This helps debug what the browser actually sends as the Origin header.
+  console.log(new Date().toISOString(), '- Incoming Origin header:', req.headers.origin);
+  next();
+});
+
+// Use cors package with a dynamic origin function
 const corsOptions = {
   origin: function (origin, callback) {
-    // allow non-browser clients (curl/postman) where origin is undefined
+    // Allow non-browser clients (curl, server-to-server) where origin is undefined
     if (!origin) return callback(null, true);
+
+    // exact match allowed
     if (allowedOrigins.includes(origin)) return callback(null, true);
+
+    // optional: allow vercel preview subdomains like https://something.vercel.app
+    if (allowVercelPreviews && /^https:\/\/.+\.vercel\.app$/i.test(origin)) {
+      console.log('Allowing vercel preview origin:', origin);
+      return callback(null, true);
+    }
+
+    // blocked
     console.warn('Blocked CORS request from origin:', origin);
     return callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
-  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
-  allowedHeaders: 'Content-Type, Authorization, X-Requested-With'
+  methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
 };
 
+// Apply CORS before body parsers and routes so preflight is handled
 app.use(cors(corsOptions));
-app.options('*', cors(corsOptions));
+app.options('*', cors(corsOptions)); // enable preflight across the board
 
 // parse JSON and cookies
 app.use(express.json({ limit: '5mb' }));
@@ -63,8 +107,8 @@ app.use((req, res, next) => {
 
 // --- Root route ---
 app.get('/', (req, res) => {
-  res.json({ 
-    message: 'SmartAI Backend API is running!', 
+  res.json({
+    message: 'SmartAI Backend API is running!',
     version: '1.0',
     endpoints: [
       'GET /api/auth',
@@ -158,5 +202,8 @@ app.use(errorHandler);
 // start
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
-  console.log(`Allowed client origins:`, allowedOrigins);
+  console.log(`Allowed client origins (explicit list):`, allowedOrigins);
+  if (allowVercelPreviews) {
+    console.log('Vercel preview wildcard is ENABLED (https://*.vercel.app allowed).');
+  }
 });
